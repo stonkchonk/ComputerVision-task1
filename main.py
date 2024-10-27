@@ -2,52 +2,55 @@ import cv2
 import cv2.aruco as aruco
 import numpy as np
 
-img = cv2.imread("images/20221115_113424.jpg", 0) #images/20221115_113319.jpg
-print(img.ndim)
+input_files = [
+    '20221115_113319.jpg',
+    '20221115_113328.jpg',
+    '20221115_113340.jpg',
+    '20221115_113346.jpg',
+    '20221115_113356.jpg',
+    '20221115_113401.jpg',
+    '20221115_113412.jpg',
+    '20221115_113424.jpg',
+    '20221115_113437.jpg',
+    '20221115_113440.jpg',
+    '20221115_113653.jpg',
+]
 
-aruco_marker_image = np.zeros((48, 48), dtype=np.uint8)
-dictionary = cv2.aruco.getPredefinedDictionary(aruco.DICT_6X6_50)
-#for i in range(0, 1):
-#    cv2.aruco.generateImageMarker(dictionary, i, 48, aruco_marker_image, 1)
-#    cv2.imwrite(f'aruco{i}.png', aruco_marker_image)
-#    print(i)
-marker_ids = np.zeros(0)
-marker_corners = np.zeros(0)
-rejected_candidates = np.zeros(0)
-detector_params = cv2.aruco.DetectorParameters()
-detector = cv2.aruco.ArucoDetector(dictionary, detector_params)
-res = detector.detectMarkers(img, marker_corners, marker_ids, rejected_candidates)
+for file in input_files:
 
-print(res[0][0][0])
-print("---")
-print(res[1])
-print("---")
-#print(res[2])
-height, width = img.shape
-print(height, width)
-detected_corners = res[0][0][0]
-actual_corners = np.float32([[-8, -8], [8, -8], [8, 8], [-8, 8]])
+    img = cv2.imread(f"images/{file}", cv2.IMREAD_COLOR)  # images/20221115_113319.jpg
+    print("reading file " + file + "\n")
 
-transformable_image = cv2.imread("images/tester3.png", 0)
-M = cv2.getPerspectiveTransform(actual_corners, detected_corners)
-print("M:", M)
-warped = cv2.warpPerspective(transformable_image, M, (width, height))
+    dictionary = cv2.aruco.getPredefinedDictionary(aruco.DICT_6X6_50)
 
-combined = cv2.addWeighted(img, 0.5, warped, 0.5, 0)
-cv2.imshow("combined",combined)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    marker_ids = np.zeros(0)
+    marker_corners = np.zeros(0)
+    rejected_candidates = np.zeros(0)
+    detector_params = cv2.aruco.DetectorParameters()
+    detector = cv2.aruco.ArucoDetector(dictionary, detector_params)
+    try:
+        aruco_detections = detector.detectMarkers(img, marker_corners, marker_ids, rejected_candidates)
+    except:
+        print(f"No ArUco detected in file: {file}")
+        continue
 
+    print(aruco_detections[0][0][0])
+    print("---")
+    print(aruco_detections[1])
+    print("---")
 
-out_img = img.copy()
+    height, width, _ = img.shape
+    print(height, width)
+    detected_corners = aruco_detections[0][0][0]
+    actual_corners = np.float32([[224, 224], [288, 224], [288, 288], [224, 288]])
 
-cv2.aruco.drawDetectedMarkers(out_img, marker_corners, marker_ids)
+    transformable_image = cv2.imread("loadbearingposter.png", cv2.IMREAD_COLOR)
+    M = cv2.getPerspectiveTransform(actual_corners, detected_corners)
+    print("M:", M)
+    warped = cv2.warpPerspective(transformable_image, M, (width, height))
 
-#cv2.namedWindow("Resize", cv2.WINDOW_NORMAL)
-# Using resizeWindow()
-#cv2.resizeWindow("Resize", 1000, 1000)
-#cv2.imshow("Resize", img)
-#cv2.waitKey(0)
-#cv2.destroyAllWindows()
+    combined = cv2.addWeighted(img, 1, warped, 1, 0)
+    cv2.imwrite(f'output/combined_{file}', combined)
+
 
 
