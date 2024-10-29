@@ -8,17 +8,17 @@ def load_image(path_to_file: str) -> cv2.typing.MatLike:
     return cv2.imread(path_to_file, cv2.IMREAD_COLOR)
 
 
-def add_two_images(first: cv2.typing.MatLike, second: cv2.typing.MatLike):
-    assert first.shape == second.shape
-    original_shape = first.shape
-    first_flat = first.flat
-    second_flat = second.flat
-    for idx, val in enumerate(second_flat):
-        if val > 0:
-            first_flat[idx] = val
-    return np.reshape(first_flat, original_shape)
+def combine_scenery_with_image(scenery: cv2.typing.MatLike, image: cv2.typing.MatLike):
+    assert scenery.shape == image.shape
+    gray_poster = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, mask = cv2.threshold(gray_poster, 1, 255, cv2.THRESH_BINARY)
+    _, mask_inverse = cv2.threshold(gray_poster, 1, 255, cv2.THRESH_BINARY_INV)
+    scenery = cv2.bitwise_and(scenery, scenery, mask=mask_inverse)
+    image = cv2.bitwise_and(image, image, mask=mask)
+    return cv2.addWeighted(scenery, 1, image, 1, 0)
 
 
+debug_mode = False
 input_files = listdir("images/")
 poster = load_image("loadbearingposter.png")
 aruco_diameter = 64
@@ -51,10 +51,14 @@ for file in input_files:
         [poster_height / 2 - aruco_diameter / 2, poster_width / 2 + aruco_diameter/2]
     ])
 
-    M = cv2.getPerspectiveTransform(actual_corners, detected_corners)
-    warped = cv2.warpPerspective(poster, M, (width, height))
+    transformation_matrix = cv2.getPerspectiveTransform(actual_corners, detected_corners)
+    print(transformation_matrix)
+    warped = cv2.warpPerspective(poster, transformation_matrix, (width, height))
 
-    combined = cv2.addWeighted(img, 1, warped, 1, 0) #add_two_images(img, warped)
+    if debug_mode:
+        combined = cv2.addWeighted(img, 0.5, warped, 0.5, 0)
+    else:
+        combined = combine_scenery_with_image(img, warped)
 
     for corner in detected_corners:
         combined[int(corner[1])][int(corner[0])] = [0, 0, 255]
