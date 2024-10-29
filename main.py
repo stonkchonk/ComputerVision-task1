@@ -52,13 +52,12 @@ for file in input_files:
     ])
 
     transformation_matrix = cv2.getPerspectiveTransform(actual_corners, detected_corners)
-    print(transformation_matrix)
-    warped = cv2.warpPerspective(poster, transformation_matrix, (width, height))
+    warped_poster = cv2.warpPerspective(poster, transformation_matrix, (width, height))
 
     if debug_mode:
-        combined = cv2.addWeighted(img, 0.5, warped, 0.5, 0)
+        combined = cv2.addWeighted(img, 0.5, warped_poster, 0.5, 0)
     else:
-        combined = combine_scenery_with_image(img, warped)
+        combined = combine_scenery_with_image(img, warped_poster)
 
     for corner in detected_corners:
         combined[int(corner[1])][int(corner[0])] = [0, 0, 255]
