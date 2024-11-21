@@ -11,10 +11,8 @@ def load_image(path_to_file: str) -> cv2.typing.MatLike:
 def combine_scenery_with_image(scenery: cv2.typing.MatLike, image: cv2.typing.MatLike):
     assert scenery.shape == image.shape
     gray_poster = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, mask = cv2.threshold(gray_poster, 1, 255, cv2.THRESH_BINARY)
     _, mask_inverse = cv2.threshold(gray_poster, 1, 255, cv2.THRESH_BINARY_INV)
     scenery = cv2.bitwise_and(scenery, scenery, mask=mask_inverse)
-    image = cv2.bitwise_and(image, image, mask=mask)
     return cv2.addWeighted(scenery, 1, image, 1, 0)
 
 
