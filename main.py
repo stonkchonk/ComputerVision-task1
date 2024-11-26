@@ -2,6 +2,8 @@ import cv2
 import cv2.aruco as aruco
 import numpy as np
 from os import listdir
+from coordinates import referenceMapping
+from math import acos, pi
 
 
 def load_image(path_to_file: str) -> cv2.typing.MatLike:
@@ -14,6 +16,12 @@ def combine_scenery_with_image(scenery: cv2.typing.MatLike, image: cv2.typing.Ma
     _, mask_inverse = cv2.threshold(gray_poster, 1, 255, cv2.THRESH_BINARY_INV)
     scenery = cv2.bitwise_and(scenery, scenery, mask=mask_inverse)
     return cv2.addWeighted(scenery, 1, image, 1, 0)
+
+
+def angle_between_vectors(v1: np.ndarray, v2: np.ndarray):
+    return acos(np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))) * 180 / pi
+
+
 
 
 debug_mode = False
@@ -50,6 +58,9 @@ for file in input_files:
     ])
 
     transformation_matrix = cv2.getPerspectiveTransform(actual_corners, detected_corners)
+    transformation_matrix_inv = cv2.getPerspectiveTransform(detected_corners, actual_corners)
+    identity = np.matmul(transformation_matrix, transformation_matrix_inv)
+
     warped_poster = cv2.warpPerspective(poster, transformation_matrix, (width, height))
 
     if debug_mode:
@@ -60,4 +71,22 @@ for file in input_files:
     for corner in detected_corners:
         combined[int(corner[1])][int(corner[0])] = [0, 0, 255]
 
+    coordinate_element = referenceMapping.get(file, None)
+
+    if coordinate_element is not None:
+        combined = cv2.line(combined, coordinate_element.h1, coordinate_element.h2, (0, 255, 0), 4)
+        combined = cv2.line(combined, coordinate_element.v1, coordinate_element.v2, (0, 255, 0), 4)
+
+
+        retransformed_h1 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.h1), 1))
+        retransformed_h2 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.h2), 1))
+        horizontal_eval_vector = retransformed_h2 - retransformed_h1
+        #print(horizontal_eval_vector)
+        horizontal_vector = np.array((100, 0, 0))
+        print('->', angle_between_vectors(horizontal_eval_vector, horizontal_vector))
+
+    #retransformed = cv2.warpPerspective(combined, transformation_matrix_inv, (width, height))
+
     cv2.imwrite(f'output/combined_{file}', combined)
+    #cv2.imwrite(f'output/retransformed_{file}', retransformed)
+
