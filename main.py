@@ -25,6 +25,7 @@ def angle_between_vectors(v1: np.ndarray, v2: np.ndarray):
 
 
 debug_mode = False
+eval_lines = True
 input_files = listdir("images/")
 poster = load_image("loadbearingposter.png")
 aruco_diameter = 64
@@ -73,20 +74,24 @@ for file in input_files:
 
     coordinate_element = referenceMapping.get(file, None)
 
-    if coordinate_element is not None:
+    if coordinate_element is not None and eval_lines:
         combined = cv2.line(combined, coordinate_element.h1, coordinate_element.h2, (0, 255, 0), 4)
         combined = cv2.line(combined, coordinate_element.v1, coordinate_element.v2, (0, 255, 0), 4)
-
 
         retransformed_h1 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.h1), 1))
         retransformed_h2 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.h2), 1))
         horizontal_eval_vector = retransformed_h2 - retransformed_h1
-        #print(horizontal_eval_vector)
-        horizontal_vector = np.array((100, 0, 0))
-        print('->', angle_between_vectors(horizontal_eval_vector, horizontal_vector))
 
-    #retransformed = cv2.warpPerspective(combined, transformation_matrix_inv, (width, height))
+        retransformed_v1 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.v1), 1))
+        retransformed_v2 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.v2), 1))
+        vertical_eval_vector = retransformed_v2 - retransformed_v1
+
+        horizontal_vector = np.array((1, 0, 0))
+        vertical_vector = np.array((0, 1, 0))
+
+        horizontal_angle = angle_between_vectors(horizontal_eval_vector, horizontal_vector)
+        vertical_angle = angle_between_vectors(vertical_eval_vector, vertical_vector)
+        print(f'-> horizontal: {horizontal_angle}°, vertical: {vertical_angle}°')
 
     cv2.imwrite(f'output/combined_{file}', combined)
-    #cv2.imwrite(f'output/retransformed_{file}', retransformed)
 
