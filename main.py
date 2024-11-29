@@ -75,8 +75,8 @@ for file in input_files:
     coordinate_element = referenceMapping.get(file, None)
 
     if coordinate_element is not None and eval_lines:
-        combined = cv2.line(combined, coordinate_element.h1, coordinate_element.h2, (0, 255, 0), 4)
-        combined = cv2.line(combined, coordinate_element.v1, coordinate_element.v2, (0, 255, 0), 4)
+        combined = cv2.line(combined, coordinate_element.h1, coordinate_element.h2, (0, 255, 0), 8)
+        combined = cv2.line(combined, coordinate_element.v1, coordinate_element.v2, (128, 0, 128), 8)
 
         retransformed_h1 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.h1), 1))
         retransformed_h2 = np.matmul(transformation_matrix_inv, np.append(np.array(coordinate_element.h2), 1))
@@ -91,7 +91,7 @@ for file in input_files:
 
         horizontal_angle = angle_between_vectors(horizontal_eval_vector, horizontal_vector)
         vertical_angle = angle_between_vectors(vertical_eval_vector, vertical_vector)
-        print(f'-> horizontal: {horizontal_angle}°, vertical: {vertical_angle}°')
+        print(f'$\\alpha$={round(horizontal_angle, 2)}°, $\\beta$={round(vertical_angle, 2)}°')
 
-    cv2.imwrite(f'output/combined_{file}', combined)
+    cv2.imwrite(f'output/combined_{file}', cv2.resize(combined, (0, 0), fx=0.25, fy=0.25))
 
